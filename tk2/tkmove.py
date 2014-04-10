@@ -26,7 +26,7 @@ def SetEnterAnim(widget, anim, trigger, **options):
     Gives a widget an enter animation. Once this has been set, the widget will be hidden at startup, and will only enter if its enter trigger event occurs.
 
     - anim: the type of entrance animation. For now only "fly in" works. Going to add later: peek up, fade in??, flicker in, shrink/grow in, etc.
-    - trigger: the GUI event that will trigger the entrance animation, given as a string the same way triggers are assigned to Tkinter trace events, eg "<Button-1>". 
+    - trigger: the GUI event that will trigger the entrance animation, given as a string the same way triggers are assigned to Tkinter trace events, eg '<Button-1>'. 
     """
     mainwindow = widget.winfo_toplevel()
     if anim == "fly in":

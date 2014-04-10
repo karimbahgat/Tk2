@@ -92,7 +92,7 @@ def PartitionSpace(xtox, ytoy, partitions, padx, pady, direction="horizontal"):
     - partitions: how many subpartitions to create, integer
     - padx: how much padding to keep between each partition on the sides, integer for pixels or float for relative position.
     - pady: how much padding to keep between each partition on the top and bottom, integer for pixels or float for relative position.
-    - direction: a string indicating
+    - direction: a string indicating in which direction to partition the space, "horizontal" (default) or "vertical".
 
     Example:
 
@@ -139,6 +139,8 @@ def PartitionSpace(xtox, ytoy, partitions, padx, pady, direction="horizontal"):
         tempx += partitionwidth/2.0+padx+partitionwidth/2.0
     return outpartitions
 
+
+#TESTING
 if __name__ == "__main__":
     if PYTHON3:
         import tkinter as tk

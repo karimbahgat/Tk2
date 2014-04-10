@@ -131,7 +131,7 @@ to make it easier and more flexible to create GUI applications.
   - partitions: how many subpartitions to create, integer
   - padx: how much padding to keep between each partition on the sides, integer for pixels or float for relative position.
   - pady: how much padding to keep between each partition on the top and bottom, integer for pixels or float for relative position.
-  - direction: a string indicating
+  - direction: a string indicating in which direction to partition the space, "horizontal" (default) or "vertical".
   
   Example:
   
@@ -157,5 +157,5 @@ to make it easier and more flexible to create GUI applications.
   Gives a widget an enter animation. Once this has been set, the widget will be hidden at startup, and will only enter if its enter trigger event occurs.
   
   - anim: the type of entrance animation. For now only "fly in" works. Going to add later: peek up, fade in??, flicker in, shrink/grow in, etc.
-  - trigger: the GUI event that will trigger the entrance animation, given as a string the same way triggers are assigned to Tkinter trace events, eg "<Button-1>". 
+  - trigger: the GUI event that will trigger the entrance animation, given as a string the same way triggers are assigned to Tkinter trace events, eg '<Button-1>'. 
 
