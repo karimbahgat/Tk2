@@ -33,12 +33,12 @@ to make it easier and more flexible to create GUI applications.
   
   **Arguments:**
   
-  | __option__    | __description__ | __input__
-  | --- | --- | ---
+  | __option__    | __description__ | __input__ 
+  | --- | --- | --- 
   | basecolor | the human-like name of a color. Always required, but can also be set to 'random'. | string
   | *intensity | how strong the color should be. Must be a float between 0 and 1, or set to 'random' (by default uses the 'strong' style values, see 'style' below). | float between 0 and 1
   | *brightness | how light or dark the color should be. Must be a float between 0 and 1 , or set to 'random' (by default uses the 'strong' style values, see 'style' below). | float between 0 and 1
-  | *style | a named style that overrides the brightness and intensity options (optional). |
+  | *style | a named style that overrides the brightness and intensity options (optional). | see list of valid style names below 
   
   Valid style names are:
   
