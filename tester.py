@@ -11,7 +11,7 @@ import tk2
 w = tk2.Tk()
 
 # FRAME
-f = tk2.Frame(w, width=200, height=200)
+f = tk2.Frame(w, text="Input", labelanchor="nw", width=200, height=200)
 f.pack(fill="both", expand=True)
 
 # LABEL
@@ -20,6 +20,11 @@ l.bind_rightclick( [("one",lambda: 1), ("two",lambda: 2)] )
 #l.bind("<B1-Motion>", lambda e: l.move_to(100*e.x//100, 100*e.y//100) )
 l.bind_draggable()
 l.pack()
+
+# BUTTONS
+b = tk2.OkButton(f.interior, command=lambda: tk2.Window())
+#b.set_icon("C:/Users/kimo/Desktop/ble.png", width=20, height=20)
+b.pack()
 
 # TEXT
 #t = tk2.SuperText(f.interior)
@@ -41,5 +46,15 @@ dr.pack()
 # CANVAS
 c = tk2.Canvas(w, width=600, height=600)
 c.pack(fill="both", expand=True)
+
+# PANES
+panes = tk2.Panes(w)
+panes.pack()
+p1 = panes.add_pane()
+l1 = tk2.Label(p1, text="hello")
+l1.pack()
+p2 = panes.add_pane()
+l2 = tk2.Label(p2, text="world")
+l2.pack()
 
 w.mainloop()

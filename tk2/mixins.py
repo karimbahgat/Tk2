@@ -21,6 +21,14 @@ class BindMixin(object):
         self._bindings = dict()
 
     # the expanded bind methods
+
+    # TODO: Merge bind_until and bind_once into the normal bind method
+    # ...by adding untilevent, untilexpires, and untilrepeat options,
+    # ...thus combining multiple possible until-conditions.
+    # ALSO: Make sure to overwrite any existing event names if specified
+    # ...more than once. And make "+" the default behavior so dont have
+    # ...to specify. 
+    
     def bind(self, eventtype, eventfunc, add=None, bindname=None):
         bindid = super(BindMixin, self).bind(eventtype, eventfunc, add)
         if bindname:
@@ -89,6 +97,7 @@ class BindMixin(object):
     # Dragging
 
     def bind_draggable(self):
+        # NOT FULLY WORKING STILL...
         self.bind("<Button-1>",
                   self.drag_mark,
                   "+")
@@ -191,15 +200,26 @@ class AnimMixin(object):
 
 # Style mixin
 class StyleMixin(object):
-    def __init__(self, master):
-        # bind event behavior
-        def mouse_in(event):
-            event.widget.config(style_button_mouseover)
-        def mouse_out(event):
-            event.widget.config(style_button_normal)
+    def __init__(self, master, **kwargs):
 
-        self.bind("<Enter>", mouse_in)
-        self.bind("<Leave>", mouse_out)
+        # if ttk, pop kwargs to create style, then assign style
+        # else, just assign the kwargs
+
+        # allow and bind style options when mouse is hovering
+        overoptions = dict([ (key[4:],val) for key,val in kwargs.items() if key.startswith("over")])
+        if overoptions:
+            # bind event behavior
+            def mouse_in(event):
+                event.widget.config(overoptions)
+            def mouse_out(event):
+                event.widget.config(overoptions)
+            self.bind("<Enter>", mouse_in, "+")
+            self.bind("<Leave>", mouse_out, "+")
+
+    def config(self, **options):
+        # if ttk, create new unique style
+        # else, just assign the kwargs
+        pass
 
 
 

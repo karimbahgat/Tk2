@@ -1,14 +1,14 @@
-import Tkinter as tk
 
-# Import style
-from . import theme
-style_bar_normal = {"outline": theme.color2,
-                    "fill": theme.alterncolor1}
-style_text_normal = {"fill": theme.font2["color"],
-                    "font": theme.font2["type"]}
-style_progressbar_normal = {"bg": theme.color2}
 
-class ProgressBar(tk.Frame):
+
+class NativeProgressbar(mx.AllMixins, ttk.Progressbar):
+    # not sure what does/how differs from normal Menu()...
+    def __init__(self, master, **kwargs):
+        ttk.Progressbar.__init__(self, master, **kwargs)
+        mx.AllMixins.__init__(self, master)
+
+
+class ProgressBar(mx.AllMixins, tk.Frame):
     def __init__(self, master, width, height, **kwargs):
         # Import style
         style = style_progressbar_normal.copy()

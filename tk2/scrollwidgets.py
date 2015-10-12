@@ -84,6 +84,8 @@ class Canvas(mx.AllMixins, tk.Canvas):
 ##        self.test_draw()
 
     def zoom(self, event, level):
+        # NOT SURE IF WORKS CORRECTLY
+        
         # scale
         value = level * (1 / float(self._zoomlevel))
         self._zoomlevel = level
@@ -97,8 +99,11 @@ class Canvas(mx.AllMixins, tk.Canvas):
 
 
 
-class Frame(mx.AllMixins, ttk.Frame):
+class Frame(mx.AllMixins, ttk.LabelFrame):
     """
+    This "super frame" combines the features of normal frames and labelframes,
+    and making it all automatically scrollable.
+    
     Use the 'interior' attribute to place widgets inside the scrollable frame.
     All inserted widgets are unified with the kwargs to make it all appear as one widget.
 
@@ -113,6 +118,9 @@ class Frame(mx.AllMixins, ttk.Frame):
         # control main frame widget args
         frameargs = kwargs.copy()
         anchor = frameargs.pop("anchor", None)
+        if not "relief" in frameargs and not frameargs.get("text",None) and not "labelwidget" in frameargs:
+            frameargs["relief"] = "flat"
+            frameargs["borderwidth"] = 0
 
         # control interior frame for inserted widget args
         interiorargs = kwargs.copy()
@@ -120,8 +128,13 @@ class Frame(mx.AllMixins, ttk.Frame):
         interiorargs.pop("width", None)
         interiorargs.pop("height", None)
 
+        # also filter out labelframe options for the regular frame interior
+        interiorargs.pop("text", None)
+        interiorargs.pop("labelanchor", None)
+        interiorargs.pop("labelwidget", None)
+        
         # subclass
-        ttk.Frame.__init__(self, parent, *args, **frameargs)
+        ttk.LabelFrame.__init__(self, parent, *args, **frameargs)
         mx.AllMixins.__init__(self, parent)
 
         # begin
