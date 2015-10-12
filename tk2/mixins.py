@@ -17,7 +17,7 @@ import ttk
 # Expanded binding methods
 
 class BindMixin(object):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master=None, **kwargs):
         self._bindings = dict()
 
     # the expanded bind methods
@@ -114,7 +114,7 @@ class BindMixin(object):
 # Animation methods
 
 class AnimMixin(object):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master=None, **kwargs):
         self._bindings = dict()
 
     def drag_mark(self, event):
@@ -200,7 +200,7 @@ class AnimMixin(object):
 
 # Style mixin
 class StyleMixin(object):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master=None, **kwargs):
 
         # if ttk, pop kwargs to create style, then assign style
         # else, just assign the kwargs
@@ -226,7 +226,7 @@ class StyleMixin(object):
 # Final Mixin class containing all mixins
 
 class AllMixins(BindMixin, AnimMixin):
-    def __init__(self, master):
+    def __init__(self, master=None):
         BindMixin.__init__(self, master)
         AnimMixin.__init__(self, master)
 

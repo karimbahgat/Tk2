@@ -16,9 +16,11 @@ http://code.activestate.com/recipes/578897-supertext-scrollable-text-with-pop-up
 
 import sys
 if sys.version.startswith("2"):
+    import Tkinter as tk
     from Tkinter import Frame, Text, Scrollbar, Menu
     from tkMessageBox import askokcancel
 else:
+    import tkinter as tk
     from tkinter import Frame, Text, Scrollbar, Menu
     from tkMessageBox import askokcancel
 import ttk
@@ -27,7 +29,7 @@ from . import mixins as mx
 
 # Classes
 
-class SuperText(Text, mx.AllMixins):
+class Text(tk.Text, mx.AllMixins):
     
     def __init__(self, parent, scrollbar=True, **kw):
 
@@ -37,7 +39,7 @@ class SuperText(Text, mx.AllMixins):
         frame.pack(fill='both', expand=True)
         
         # text widget
-        Text.__init__(self, frame, **kw)
+        tk.Text.__init__(self, frame, **kw)
         self.pack(side='left', fill='both', expand=True)
         mx.AllMixins.__init__(self, parent)
         
@@ -70,6 +72,18 @@ class SuperText(Text, mx.AllMixins):
             self._typewriter([char for char in text])
             
         elif theme == 'terminal':
+            '''blocky insert cursor'''
+            options = {'bg': 'black', 'fg': 'white', 'font': ('Courier', 10)}
+            self.config(options)
+            self.cursor = '1.0'
+            self.fg = self.cget('fg')
+            self.bg = self.cget('bg')
+            self.switch = self.fg
+            self.config(insertwidth=0)
+            self._blink_cursor()
+            self._place_cursor()
+
+        elif theme == 'matrix':
             '''blocky insert cursor'''
             options = {'bg': 'black', 'fg': 'green', 'font': ('Courier', 10)}
             self.config(options)

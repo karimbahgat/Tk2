@@ -26,6 +26,77 @@ class _AutoScrollbar(ttk.Scrollbar):
     def place(self, **kw):
         raise tk.TclError, "cannot use place with this widget"
 
+class Listbox(tk.Frame, mx.AllMixins):
+    def __init__(self, master, items=[], *args, **kwargs):
+        tk.Frame.__init__(self, master)
+        mx.AllMixins.__init__(self, master)
+
+        vscrollbar = _AutoScrollbar(self, orient=tk.VERTICAL)
+        vscrollbar.grid(row=0, column=1, sticky="ns")
+        hscrollbar = _AutoScrollbar(self, orient=tk.HORIZONTAL)
+        hscrollbar.grid(row=1, column=0, sticky="ew")
+        
+        self.listbox = tk.Listbox(self,
+                                 yscrollcommand=vscrollbar.set,
+                                 xscrollcommand=hscrollbar.set)
+
+        # default list box behavior
+        if "activestyle" not in kwargs: kwargs["activestyle"] = "none"
+        if "highlightthickness" not in kwargs: kwargs["highlightthickness"] = 0
+        if "selectmode" not in kwargs: kwargs["selectmode"] = "extended"
+        self.listbox.config(*args, **kwargs)
+        
+        vscrollbar.config(command=self.listbox.yview)
+        hscrollbar.config(command=self.listbox.xview)
+        self.listbox.grid(row=0, column=0, sticky="nsew")
+
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        vscrollbar.grid_rowconfigure(0, weight=1)
+        hscrollbar.grid_columnconfigure(0, weight=1)
+
+        for item in items:
+            self.listbox.insert("end", str(item))
+
+    # ADD CUSTOM OVERRIDE METHODS THAT REDIRECT TO self.listbox
+    # ...
+
+    def insert(self, *args, **kwargs):
+        return self.listbox.insert(*args, **kwargs)
+
+##class Listbox(tk.Listbox, mx.AllMixins):
+##    def __init__(self, master, items=[], *args, **kwargs):
+##
+##        tk.Listbox.__init__(self, master)
+##        mx.AllMixins.__init__(self, master)
+##
+##        vscrollbar = _AutoScrollbar(self, orient=tk.VERTICAL)
+##        vscrollbar.grid(row=0, column=1, sticky="ns")
+##        #vscrollbar.grid_configure(rowspan=2)
+##        hscrollbar = _AutoScrollbar(self, orient=tk.HORIZONTAL)
+##        hscrollbar.grid(row=1, column=0, sticky="ew")
+##
+##        # default list box behavior
+##        if "activestyle" not in kwargs: kwargs["activestyle"] = "none"
+##        if "highlightthickness" not in kwargs: kwargs["highlightthickness"] = 0
+##        if "selectmode" not in kwargs: kwargs["selectmode"] = "extended"
+##        self.config(yscrollcommand=vscrollbar.set,
+##                     xscrollcommand=hscrollbar.set,
+##                     *args, **kwargs)
+##        print kwargs
+##        print self.config
+##    
+##        vscrollbar.config(command=self.yview)
+##        hscrollbar.config(command=self.xview)
+##        
+####        self.grid_rowconfigure(0, weight=1)
+####        self.grid_columnconfigure(0, weight=1)
+####        vscrollbar.grid_rowconfigure(0, weight=1)
+####        hscrollbar.grid_columnconfigure(0, weight=1)
+##
+##        for item in items:
+##            self.insert("end", str(item))
+
 class Canvas(mx.AllMixins, tk.Canvas):
     def __init__(self, parent, *args, **kwargs):
 
@@ -65,24 +136,6 @@ class Canvas(mx.AllMixins, tk.Canvas):
                   lambda event: self.scan_dragto(event.x, event.y, 1),
                   "+")
 
-##        # TESTING
-##        # zoom widget
-##        def call_on_zoom(event):
-##            self.zoom(None, scale.get())
-##        scale = Scale(self, from_=5000, to=1, #resolution=-1,
-##                      command=call_on_zoom)
-##        scale.grid(row=0,column=0, sticky="w")
-##        scale.set(100)
-##        self._zoomlevel = scale.get()
-##
-##        # draw more
-##        drawbut = tkButton(self, text="draw", command=self.test_draw)
-##        drawbut.grid(row=0,column=0, sticky="n")
-##        drawbut.grid_configure(columnspan=2)
-##
-##        # startup
-##        self.test_draw()
-
     def zoom(self, event, level):
         # NOT SURE IF WORKS CORRECTLY
         
@@ -96,8 +149,6 @@ class Canvas(mx.AllMixins, tk.Canvas):
         xoff,yoff = min((x1,x2))+width/2.0, min((y1,y2))+height/2.0
         # execute
         self.scale("all",xoff,yoff,value,value)
-
-
 
 class Frame(mx.AllMixins, ttk.LabelFrame):
     """
@@ -180,6 +231,9 @@ class Frame(mx.AllMixins, ttk.LabelFrame):
                 # update the canvas's height to fit the inner frame
                 canvas.config(height=self.interior.winfo_reqheight())
         self.interior.bind('<Configure>', _configure_interior)
+
+    # ADD CUSTOM OVERRIDE METHODS THAT REDIRECT TO self.interior
+    # ...
 
 
 

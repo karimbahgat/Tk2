@@ -84,10 +84,28 @@ class Menubutton(mx.AllMixins, ttk.Menubutton):
         ttk.Menubutton.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
-class Slider(ttk.Scale, mx.AllMixins):
+class Slider(mx.AllMixins, ttk.Scale):
     def __init__(self, master, *args, **kwargs):
         ttk.Scale.__init__(self, master, *args, **kwargs)
         mx.AllMixins.__init__(self, master)
+
+##class Listbox(tk.Frame, mx.AllMixins):
+##    def __init__(self, master, items=[], *args, **kwargs):
+##        tk.Frame.__init__(self, master, *args, **kwargs)
+##        mx.AllMixins.__init__(self, master)
+##
+##        scrollbar = Scrollbar(self, orient="vertical")
+##        listbox = tk.Listbox(self, yscrollcommand=scrollbar.set,
+##                          activestyle="none",
+##                          highlightthickness=0, selectmode="extended")
+##        scrollbar.config(command=listbox.yview)
+##        scrollbar.pack(side="right", fill="y")
+##        listbox.pack(side="left", fill="both", expand=True)
+##
+##        for item in items:
+##            listbox.insert("end", str(item))
+        
+
 
 
 
@@ -95,14 +113,16 @@ class Slider(ttk.Scale, mx.AllMixins):
 
 # Unify Tk(), Window
 
-class Tk(tk.Tk):
+class Tk(mx.AllMixins, tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+        mx.AllMixins.__init__(self)
         
-class Window(tk.Toplevel):
+class Window(mx.AllMixins, tk.Toplevel):
     def __init__(self, master=None, **kwargs):
         # Make this class a subclass of tk.Menu and add to it
         tk.Toplevel.__init__(self, master, **kwargs)
+        mx.AllMixins.__init__(self, master)
         # Set its size to percent of screen size, and place in middle
         width = self.winfo_screenwidth() * 0.6
         height = self.winfo_screenheight() * 0.6
@@ -119,6 +139,7 @@ class Button(mx.AllMixins, ttk.Button):
     def __init__(self, master, **kwargs):
         # initialize
         ttk.Button.__init__(self, master, **kwargs)
+        mx.AllMixins.__init__(self, master)
 
     def set_icon(self, filepath, **kwargs):
         """
@@ -172,14 +193,15 @@ class CancelButton(Button):
 
 
 
-# Add PanedWindow as a method for the Frame widget??
+# Add PanedWindow
 
-class Panes(tk.PanedWindow):
+class Panes(mx.AllMixins, tk.PanedWindow):
     def __init__(self, master, panes=1, **kwargs):
         # initialize
         if "sashrelief" not in kwargs:
             kwargs["sashrelief"] = "ridge"
         tk.PanedWindow.__init__(self, master, **kwargs)
+        mx.AllMixins.__init__(self, master)
 
         # add all panes at startup
         #for _ in range(panes):

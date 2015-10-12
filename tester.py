@@ -27,9 +27,11 @@ b = tk2.OkButton(f.interior, command=lambda: tk2.Window())
 b.pack()
 
 # TEXT
-#t = tk2.SuperText(f.interior)
-#t.apply_theme("typewriter")
-#t.pack()
+##t = tk2.Text(f.interior)
+##t.apply_theme("terminal")
+##t.pack()
+##t.insert("insert", "TITLE:\n Some introduction content blabla...")
+##t["state"] = "disabled"
 
 ## SLIDER
 s = tk2.Slider(f.interior)
@@ -56,5 +58,16 @@ l1.pack()
 p2 = panes.add_pane()
 l2 = tk2.Label(p2, text="world")
 l2.pack()
+
+# LISTBOX
+listbox = tk2.Listbox(w, items=range(90))
+listbox.insert("0", "fhjksdhfjsdkhfkjshdfjkshdfjkhdfkjsfh")
+listbox.pack(fill="both", expand=True)
+
+# MULTIS
+multisel = tk2.Multiselect(w, choices=range(100))
+multisel.pack()
+multient = tk2.Multientry(w)
+multient.pack()
 
 w.mainloop()
