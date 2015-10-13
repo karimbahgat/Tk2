@@ -150,7 +150,55 @@ class Canvas(mx.AllMixins, tk.Canvas):
         # execute
         self.scale("all",xoff,yoff,value,value)
 
-class Frame(mx.AllMixins, ttk.LabelFrame):
+    def await_draw_point(self):
+        def place_button(event):
+            self.create_rectangle(event.x, event.y, event.x+10, event.y+10)
+            #self.unbind(bindid)
+        bindid = self.bind("<Button-3>", place_button, "+")
+
+    def await_draw_lines(self):
+        coords = []
+        vertexids = []
+        lineids = []
+        mousevertex = self.create_rectangle(0-5, 0-5, 0+5, 0+5)
+        mouseline = self.create_line(0-5, 0-5, 0+5, 0+5, dash=(3,3))
+
+        def add_vertex(event):
+            # draw line
+            if len(coords) >= 1:
+                lineid = self.create_line(coords[-1][0], coords[-1][1], event.x, event.y)
+                lineids.append(lineid)
+                
+            # draw point
+            coords.append((event.x, event.y))
+            vertexid = self.create_rectangle(event.x-5, event.y-5, event.x+5, event.y+5)
+            vertexids.append(vertexid)
+
+        def mouse_moves(event):
+            self.coords(mousevertex, event.x-5, event.y-5, event.x+5, event.y+5)
+            if len(coords) >= 1:
+                self.coords(mouseline, coords[-1][0], coords[-1][1], event.x, event.y)
+
+        avid = self.bind("<Button-1>", add_vertex, "+")
+        mmid = self.bind("<Motion>", mouse_moves, "+")
+
+        def undo(event):
+            del coords[-1]
+            self.delete(vertexids.pop(-1))
+            self.delete(lineids.pop(-1))
+        
+        unid = self.bind_all("<BackSpace>", undo, "+")
+
+        def finish(event):
+            self.delete(mousevertex)
+            self.delete(mouseline)
+            self.unbind("<Button-1>", avid)
+            self.unbind("<Motion>", mmid)
+            self.unbind("<BackSpace>", undo)
+            
+        self.bind("<Button-3>", finish, "+")
+
+class Frame(mx.AllMixins, tk.LabelFrame):
     """
     This "super frame" combines the features of normal frames and labelframes,
     and making it all automatically scrollable.
@@ -185,7 +233,7 @@ class Frame(mx.AllMixins, ttk.LabelFrame):
         interiorargs.pop("labelwidget", None)
         
         # subclass
-        ttk.LabelFrame.__init__(self, parent, *args, **frameargs)
+        tk.LabelFrame.__init__(self, parent, *args, **frameargs)
         mx.AllMixins.__init__(self, parent)
 
         # begin
@@ -200,7 +248,7 @@ class Frame(mx.AllMixins, ttk.LabelFrame):
                         bg=kwargs.get("bg"),
                         #bd=0, highlightthickness=0,
                         )
-        canvas.grid(row=0, column=0, sticky=anchor)
+        canvas.grid(row=0, column=0, sticky="nsew")
 
         vscrollbar.config(command=canvas.yview)
         hscrollbar.config(command=canvas.xview)
@@ -214,6 +262,8 @@ class Frame(mx.AllMixins, ttk.LabelFrame):
         # create canvas contents
 
         self.interior = ttk.Frame(canvas, **interiorargs)
+        #self.interior.place(x=0, y=0) #relwidth=1, relheight=1)
+        #self.interior.pack(fill="both", expand=True)
         #self.interior.rowconfigure(1, weight=1)
         #self.interior.columnconfigure(1, weight=1)
 
@@ -221,16 +271,26 @@ class Frame(mx.AllMixins, ttk.LabelFrame):
 
         # on resize
         def _configure_interior(event):
+            #self.interior.place(width=canvas.winfo_width(), height=canvas.winfo_height())
+            #self.update()
+            
             # update the scrollbars to match the size of the inner frame
             size = (self.interior.winfo_reqwidth(), self.interior.winfo_reqheight())
             canvas.config(scrollregion="0 0 %s %s" % size)
-            if self.interior.winfo_reqwidth() != canvas.winfo_width():
+            if self.interior.winfo_reqwidth() > canvas.winfo_width():
                 # update the canvas's width to fit the inner frame
                 canvas.config(width=self.interior.winfo_reqwidth())
-            if self.interior.winfo_reqheight() != canvas.winfo_height():
+            if self.interior.winfo_reqheight() > canvas.winfo_height():
                 # update the canvas's height to fit the inner frame
                 canvas.config(height=self.interior.winfo_reqheight())
         self.interior.bind('<Configure>', _configure_interior)
+
+        def _configure_canvas(event):
+            if self.interior.winfo_reqwidth() < canvas.winfo_width():
+                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
+            if self.interior.winfo_reqheight() < canvas.winfo_height():
+                canvas.itemconfigure(interior_id, height=canvas.winfo_height())
+        canvas.bind("<Configure>", _configure_canvas)
 
     # ADD CUSTOM OVERRIDE METHODS THAT REDIRECT TO self.interior
     # ...

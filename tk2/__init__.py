@@ -10,7 +10,7 @@ from texteditor import Text
 
 # Later
 
-from _multiwidgets import *
+from multiwidgets import *
 #from progbar import *
 #from ribbon import *
 #from orderedlist import *
