@@ -20,6 +20,7 @@ from . import scrollwidgets
 
 class Label(mx.AllMixins, ttk.Label):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Label.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
         
@@ -40,57 +41,68 @@ class Label(mx.AllMixins, ttk.Label):
 
 class Entry(mx.AllMixins, ttk.Entry):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Entry.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Checkbutton(mx.AllMixins, tk.Checkbutton):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         tk.Checkbutton.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Radiobutton(mx.AllMixins, tk.Radiobutton):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         tk.Radiobutton.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Dropdown(mx.AllMixins, ttk.Combobox):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Combobox.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Separator(mx.AllMixins, ttk.Separator):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Separator.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Sizegrip(mx.AllMixins, ttk.Sizegrip):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Sizegrip.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Treeview(mx.AllMixins, ttk.Treeview):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Treeview.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Scrollbar(mx.AllMixins, ttk.Scrollbar):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Scrollbar.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Menubutton(mx.AllMixins, ttk.Menubutton):
     # not sure what does/how differs from normal Menu()...
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.Menubutton.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 class Slider(mx.AllMixins, ttk.Scale):
     def __init__(self, master, *args, **kwargs):
+        master = mx.get_master(master)
         ttk.Scale.__init__(self, master, *args, **kwargs)
         mx.AllMixins.__init__(self, master)
 
 ##class Listbox(tk.Frame, mx.AllMixins):
 ##    def __init__(self, master, items=[], *args, **kwargs):
+##        master = mx.get_master(master)
 ##        tk.Frame.__init__(self, master, *args, **kwargs)
 ##        mx.AllMixins.__init__(self, master)
 ##
@@ -117,27 +129,61 @@ class Tk(mx.AllMixins, tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         mx.AllMixins.__init__(self)
+        # Force and lock focus to the window
+        self.grab_set()
+        self.focus_force()
+
+    def center(self):
+        # Set its size to percent of screen size, and place in middle
+        def _center(*bl):
+            if self.winfo_viewable():
+                width = self.winfo_reqwidth()
+                height = self.winfo_reqheight()
+                xleft = self.winfo_screenwidth()/2.0 - width / 2.0
+                ytop = self.winfo_screenheight()/2.0 - height / 2.0
+                self.geometry("+%i+%i"%(xleft, ytop))
+            else:
+                # wait for window to have been populated/viewable
+                # to get the correct reqwidth/reqheight
+                self.after(10,_center)
+
+        self.after(10, _center)
+        
         
 class Window(mx.AllMixins, tk.Toplevel):
     def __init__(self, master=None, **kwargs):
         # Make this class a subclass of tk.Menu and add to it
+        master = mx.get_master(master)
         tk.Toplevel.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
-        # Set its size to percent of screen size, and place in middle
-        width = self.winfo_screenwidth() * 0.6
-        height = self.winfo_screenheight() * 0.6
-        xleft = self.winfo_screenwidth()/2.0 - width / 2.0
-        ytop = self.winfo_screenheight()/2.0 - height / 2.0
-        self.geometry("%ix%i+%i+%i"%(width, height, xleft, ytop))
         # Force and lock focus to the window
         self.grab_set()
         self.focus_force()
+        
+    def center(self):
+        # Set its size to percent of screen size, and place in middle
+        def _center(*bl):
+            if self.winfo_viewable():
+                width = self.winfo_reqwidth()
+                height = self.winfo_reqheight()
+                xleft = self.winfo_screenwidth()/2.0 - width / 2.0
+                ytop = self.winfo_screenheight()/2.0 - height / 2.0
+                self.geometry("+%i+%i"%(xleft, ytop))
+            else:
+                # wait for window to have been populated/viewable
+                # to get the correct reqwidth/reqheight
+                self.after(10,_center)
+
+        self.after(10, _center)
+
+
 
 # Complete the button widgets!
 
 class Button(mx.AllMixins, ttk.Button):
     def __init__(self, master, **kwargs):
         # initialize
+        master = mx.get_master(master)
         ttk.Button.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
@@ -200,6 +246,7 @@ class Panes(mx.AllMixins, tk.PanedWindow):
         # initialize
         if "sashrelief" not in kwargs:
             kwargs["sashrelief"] = "ridge"
+        master = mx.get_master(master)
         tk.PanedWindow.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
@@ -229,6 +276,7 @@ class Panes(mx.AllMixins, tk.PanedWindow):
 class Toolbar(mx.AllMixins, ttk.LabelFrame):
     # not sure what does/how differs from normal Menu()...
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         ttk.LabelFrame.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 

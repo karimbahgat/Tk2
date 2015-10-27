@@ -29,18 +29,21 @@ from . import mixins as mx
 
 # Classes
 
-class Text(tk.Text, mx.AllMixins):
+class Text(mx.AllMixins, tk.Text):
     
     def __init__(self, parent, scrollbar=True, **kw):
 
+        parent = mx.get_master(parent)
         self.parent = parent
         
         frame = Frame(parent)
         frame.pack(fill='both', expand=True)
         
         # text widget
+        if "wrap" not in kw:
+            kw["wrap"] = "word"
         tk.Text.__init__(self, frame, **kw)
-        self.pack(side='left', fill='both', expand=True)
+        #self.pack(side='left', fill='both', expand=True)
         mx.AllMixins.__init__(self, parent)
         
         # scrollbar
@@ -58,6 +61,10 @@ class Text(tk.Text, mx.AllMixins):
         self.popup.add_command(label='Select All', command=self._select_all)
         self.popup.add_command(label='Clear All', command=self._clear_all)
         self.bind('<Button-3>', self._show_popup)
+
+        # only allow mouse scroll when mouse inside text
+        self.bind("<Leave>", lambda event: self.winfo_toplevel().focus_set(), "+")
+        self.bind("<Enter>", lambda event: self.focus_set(), "+")
         
     def apply_theme(self, theme='standard'):
         '''theme=['standard', 'typewriter', 'terminal']'''
@@ -94,7 +101,75 @@ class Text(tk.Text, mx.AllMixins):
             self.config(insertwidth=0)
             self._blink_cursor()
             self._place_cursor()
-        
+
+    def highlight_pattern(self, pattern, tag, start="1.0", end="end",
+                          regexp=False, nocase=True, exact=True, **kwargs):
+        '''Apply the given tag to all text that matches the given pattern
+
+        If 'regexp' is set to True, pattern will be treated as a regular
+        expression.
+
+        From: http://stackoverflow.com/questions/3781670/how-to-highlight-text-in-a-tkinter-text-widget
+        '''
+
+        if not pattern:
+            return 0
+        start = self.index(start)
+        end = self.index(end)
+        self.mark_set("matchStart", start)
+        self.mark_set("matchEnd", start)
+        self.mark_set("searchLimit", end)
+
+        count = tk.IntVar()
+        while True:
+            index = self.search(pattern, "matchEnd", "searchLimit",
+                                count=count, regexp=regexp, nocase=nocase,
+                                exact=exact, **kwargs)
+            if index: 
+                self.mark_set("matchStart", index)
+                self.mark_set("matchEnd", "%s+%sc" % (index, count.get()))
+                self.tag_add(tag, "matchStart", "matchEnd")
+            else:
+                break
+        return count.get()
+
+    def clear_highlights(self):
+        self.tag_delete(*self.tag_names())
+
+    def next_pattern(self, pattern, current,
+                     regexp=False, nocase=True, exact=True, **kwargs):
+        if not pattern:
+            return None
+        start = self.index(current)
+        end = self.index("end")
+
+        count = tk.IntVar()
+        index = self.search(pattern, start, end,
+                            count=count, regexp=regexp, nocase=nocase,
+                            exact=exact, **kwargs)
+        if index:
+            print index, count.get()
+            return index, index+"+%sc"%count.get()
+        else:
+            return None
+
+    def prev_pattern(self, pattern, current,
+                     regexp=False, nocase=True, exact=True, **kwargs):
+        if not pattern:
+            return None
+        start = self.index("1.0")
+        end = self.index(current)
+
+        count = tk.IntVar()
+        index = self.search(pattern, start, end,
+                            count=count, regexp=regexp, nocase=nocase,
+                            exact=exact, backwards=True, **kwargs)
+        if index:
+            print index, count.get()
+            return index, index+"-%sc"%count.get()
+        else:
+            return None
+
     def _show_popup(self, event):
         '''right-click popup menu'''
         

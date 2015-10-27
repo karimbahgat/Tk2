@@ -21,6 +21,7 @@ from . import scrollwidgets as sw
 
 class Multiselect(mx.AllMixins, tk.Frame):
     def __init__(self, master, choices, **kwargs):
+        master = mx.get_master(master)
         tk.Frame.__init__(self, master, **kwargs)
 
         # add the listbox where all selections will be added
@@ -60,6 +61,7 @@ class Multiselect(mx.AllMixins, tk.Frame):
 
 class Multientry(mx.AllMixins, tk.Frame):
     def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
         tk.Frame.__init__(self, master, **kwargs)
 
         # add the listbox where all selections will be added

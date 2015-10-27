@@ -9,8 +9,31 @@ Wraps around all the major widgets
 import sys
 if sys.version.startswith("2"):
     import Tkinter as tk
-else: import tkinter as tk
+    import Tkdnd as dnd
+    import Queue
+else:
+    import tkinter as tk
+    import tkinter.dnd as dnd
+    import queue as Queue
 import ttk
+
+import threading
+import traceback
+
+from . import filednd
+
+
+
+
+
+# Master inheriting overrides
+
+def get_master(master):
+    if hasattr(master, "interior"):
+        master = master.interior
+    return master
+
+
 
 
 
@@ -27,7 +50,10 @@ class BindMixin(object):
     # ...thus combining multiple possible until-conditions.
     # ALSO: Make sure to overwrite any existing event names if specified
     # ...more than once. And make "+" the default behavior so dont have
-    # ...to specify. 
+    # ...to specify.
+
+    # IMPLEMENT THIS INSTEAD MAYBE:
+    # https://mail.python.org/pipermail//tkinter-discuss/2012-May/003152.html
     
     def bind(self, eventtype, eventfunc, add=None, bindname=None):
         bindid = super(BindMixin, self).bind(eventtype, eventfunc, add)
@@ -115,7 +141,7 @@ class BindMixin(object):
 
 class AnimMixin(object):
     def __init__(self, master=None, **kwargs):
-        self._bindings = dict()
+        pass
 
     def drag_mark(self, event):
         self._drag_mark_xy = event.x_root-event.widget.winfo_rootx(), event.y_root-event.widget.winfo_rooty()
@@ -197,36 +223,153 @@ class AnimMixin(object):
         mainwindow.after(frequency, func)
 
 
+# Dispatch heavy tasks mixin
+class DispatchMixin(object):
+    def __init__(self, master=None, **kwargs):
+        pass
+    
+    def new_thread(self, task, args=(), kwargs={}):
+        # prepare request
+        resultqueue = Queue.Queue()
+        task_args = (args, kwargs)
+        instruct = task, task_args, resultqueue
+
+        # begin processing in new thread
+        def _compute_results_(func, func_args, resultqueue):
+            "internal use only, this function is run entirely in the new worker thread"
+            args, kwargs = func_args
+            try:
+                _results = func(*args, **kwargs)
+            except Exception as errmsg:
+                _results = Exception(traceback.format_exc() )
+            resultqueue.put( _results )
+            
+        worker = threading.Thread(target=_compute_results_, args=instruct)
+        worker.daemon = True
+        worker._resultqueue = resultqueue
+        worker._aftertasks = []
+        worker.start()
+
+        # return worker thread to user, so they can add several postprocessing steps
+        return worker
+
+    def process_thread(self, thread, func, mslag=100, msinterval=100):
+        # process the results after completion
+        # ...by checking the resultqueue attribute of the thread
+
+        def _process():
+            result = thread._resultqueue.get()
+            func(result)
+            
+        self.after_thread(thread, _process, mslag=mslag, msinterval=msinterval)
+
+    def after_thread(self, thread, task, args=(), kwargs={}, mslag=100, msinterval=100):
+
+        instruct = (task,args,kwargs)
+        thread._aftertasks.append(instruct)
+        
+        def _check():
+            if not thread.isAlive():
+                nexttask,nextargs,nextkwargs = thread._aftertasks[0]
+                if nexttask == task:
+                    task(*args, **kwargs)
+                    thread._aftertasks.pop(0)
+            else:
+                self.after(msinterval, _check)
+                    
+        self.after(mslag, _check)
+
+
+# Drag and drop mixin
+class DnDMixin(object):
+    def __init__(self, master=None, **kwargs):
+        pass
+
+    def bind_dnddrop(self, callback, dndtype, event='<Drop>', priority=50):
+        """
+        dndtype is either Files or Text.
+        """
+        dndobj = filednd.TkDND(self.winfo_toplevel())
+        dndobj.bindtarget(self, callback, dndtype, event=event, priority=priority)
+
+    def unbind_dnddrop(self):
+        filednd.TkDND(self).cleartarget(self)
+
+    def __str__(self):
+        # Important in order for TkDnD to get widget path name
+        # instead of class representation,
+        # because in Python2 Tkinter widgets are oldstyle while we
+        # force them into newstyle objects.
+        return self.winfo_pathname(self.winfo_id())
+
+    def __repr__(self):
+        return self.__str__()
+
+
 
 # Style mixin
-class StyleMixin(object):
-    def __init__(self, master=None, **kwargs):
-
-        # if ttk, pop kwargs to create style, then assign style
-        # else, just assign the kwargs
-
-        # allow and bind style options when mouse is hovering
-        overoptions = dict([ (key[4:],val) for key,val in kwargs.items() if key.startswith("over")])
-        if overoptions:
-            # bind event behavior
-            def mouse_in(event):
-                event.widget.config(overoptions)
-            def mouse_out(event):
-                event.widget.config(overoptions)
-            self.bind("<Enter>", mouse_in, "+")
-            self.bind("<Leave>", mouse_out, "+")
-
-    def config(self, **options):
-        # if ttk, create new unique style
-        # else, just assign the kwargs
-        pass
+##class StyleMixin(object):
+##    def __init__(self, master=None, **kwargs):
+##
+##        # if ttk, pop kwargs to create style, then assign style
+##        if "ttk." in repr(self):
+##            if ".Entry" in repr(self) or ".Dropdown" in repr(self):
+##                # entry and combobox dont allow font changes via styling, only via direct widget options
+##                pass
+##            else:
+##                pass
+##        
+##        # else, just assign the kwargs
+##        else:
+##
+####            # allow and bind style options when mouse is hovering
+####            overoptions = dict([ (key[4:],val) for key,val in kwargs.items() if key.startswith("over")])
+####            if overoptions:
+####                # bind event behavior
+####                def mouse_in(event):
+####                    event.widget.config(overoptions)
+####                def mouse_out(event):
+####                    event.widget.config(overoptions)
+####                self.bind("<Enter>", mouse_in, "+")
+####                self.bind("<Leave>", mouse_out, "+")
+##
+##            pass
+##
+##    def configure(self, **options): 
+##        # if ttk, create new unique style
+##        if "ttk." in repr(self):
+##            if ".Entry" in repr(self) or ".Dropdown" in repr(self):
+##                # entry and combobox dont allow font changes via styling, only via direct widget options
+##                if "font" in options:
+##                    # change the tkvars for those options...
+##                    STYLES["TEntry or TDropdown"]["configure"]["font"].set(str( options.pop("font") ))
+##
+##            super(StyleMixin, self).configure(**options)
+##
+##        # else, just assign the kwargs
+##        pass
+##
+##    def config(self, **options):
+##        # alias for configure
+##        self.configure(**options)
+##
+##class StyleManager(object):
+##    def __init__(self):
+##        self.styles = dict()
+##        self.styles["."] = dict()
+##        self.styles["TEntry"] = dict()
+##        
+##    def configure(self, stylename, **kwargs):
+##        pass
 
 
 
 # Final Mixin class containing all mixins
 
-class AllMixins(BindMixin, AnimMixin):
+class AllMixins(DnDMixin, DispatchMixin, AnimMixin, BindMixin):
     def __init__(self, master=None):
         BindMixin.__init__(self, master)
         AnimMixin.__init__(self, master)
+        DispatchMixin.__init__(self, master)
+        DnDMixin.__init__(self, master)
 

@@ -28,6 +28,7 @@ class _AutoScrollbar(ttk.Scrollbar):
 
 class Listbox(tk.Frame, mx.AllMixins):
     def __init__(self, master, items=[], *args, **kwargs):
+        master = mx.get_master(master)
         tk.Frame.__init__(self, master)
         mx.AllMixins.__init__(self, master)
 
@@ -105,6 +106,7 @@ class Canvas(mx.AllMixins, tk.Canvas):
         anchor = frameargs.pop("anchor", None)
 
         # subclass
+        parent = mx.get_master(parent)
         tk.Canvas.__init__(self, parent, *args, **frameargs)
         mx.AllMixins.__init__(self, parent)
         
@@ -199,6 +201,13 @@ class Canvas(mx.AllMixins, tk.Canvas):
         self.bind("<Button-3>", finish, "+")
 
 class Frame(mx.AllMixins, tk.LabelFrame):
+    def __init__(self, parent, *args, **kwargs):
+        # subclass
+        parent = mx.get_master(parent)
+        tk.LabelFrame.__init__(self, parent, *args, **kwargs)
+        mx.AllMixins.__init__(self, parent)
+
+class ScrollFrame(mx.AllMixins, tk.LabelFrame):
     """
     This "super frame" combines the features of normal frames and labelframes,
     and making it all automatically scrollable.
@@ -233,6 +242,7 @@ class Frame(mx.AllMixins, tk.LabelFrame):
         interiorargs.pop("labelwidget", None)
         
         # subclass
+        parent = mx.get_master(parent)
         tk.LabelFrame.__init__(self, parent, *args, **frameargs)
         mx.AllMixins.__init__(self, parent)
 
@@ -242,16 +252,16 @@ class Frame(mx.AllMixins, tk.LabelFrame):
         hscrollbar = _AutoScrollbar(self, orient=tk.HORIZONTAL)
         hscrollbar.grid(row=1, column=0, sticky="ew")
 
-        canvas = tk.Canvas(self,
+        self.canvas = tk.Canvas(self,
                         yscrollcommand=vscrollbar.set,
                         xscrollcommand=hscrollbar.set,
                         bg=kwargs.get("bg"),
                         #bd=0, highlightthickness=0,
                         )
-        canvas.grid(row=0, column=0, sticky="nsew")
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
-        vscrollbar.config(command=canvas.yview)
-        hscrollbar.config(command=canvas.xview)
+        vscrollbar.config(command=self.canvas.yview)
+        hscrollbar.config(command=self.canvas.xview)
 
         # make the canvas expandable
         self.grid_rowconfigure(0, weight=1)
@@ -261,36 +271,46 @@ class Frame(mx.AllMixins, tk.LabelFrame):
 
         # create canvas contents
 
-        self.interior = ttk.Frame(canvas, **interiorargs)
+        self.interior = ttk.Frame(self.canvas, **interiorargs)
         #self.interior.place(x=0, y=0) #relwidth=1, relheight=1)
         #self.interior.pack(fill="both", expand=True)
         #self.interior.rowconfigure(1, weight=1)
         #self.interior.columnconfigure(1, weight=1)
 
-        interior_id = canvas.create_window(0, 0, window=self.interior, anchor="nw")
+        interior_id = self.canvas.create_window(0, 0, window=self.interior, anchor="nw")
 
         # on resize
         def _configure_interior(event):
-            #self.interior.place(width=canvas.winfo_width(), height=canvas.winfo_height())
-            #self.update()
-            
             # update the scrollbars to match the size of the inner frame
             size = (self.interior.winfo_reqwidth(), self.interior.winfo_reqheight())
-            canvas.config(scrollregion="0 0 %s %s" % size)
-            if self.interior.winfo_reqwidth() > canvas.winfo_width():
+            self.canvas.config(scrollregion="0 0 %s %s" % size)
+            if self.interior.winfo_reqwidth() != self.canvas.winfo_width():
                 # update the canvas's width to fit the inner frame
-                canvas.config(width=self.interior.winfo_reqwidth())
-            if self.interior.winfo_reqheight() > canvas.winfo_height():
+                self.canvas.config(width=self.interior.winfo_reqwidth())
+            if self.interior.winfo_reqheight() != self.canvas.winfo_height():
                 # update the canvas's height to fit the inner frame
-                canvas.config(height=self.interior.winfo_reqheight())
+                self.canvas.config(height=self.interior.winfo_reqheight())
         self.interior.bind('<Configure>', _configure_interior)
 
-        def _configure_canvas(event):
-            if self.interior.winfo_reqwidth() < canvas.winfo_width():
-                canvas.itemconfigure(interior_id, width=canvas.winfo_width())
-            if self.interior.winfo_reqheight() < canvas.winfo_height():
-                canvas.itemconfigure(interior_id, height=canvas.winfo_height())
-        canvas.bind("<Configure>", _configure_canvas)
+        # allow mouse scroll
+        def _scroll(event):
+            try: widget = self.winfo_containing(event.x_root, event.y_root)
+            except: widget = None
+            while widget:
+                if isinstance(widget, ScrollFrame):
+                    # scrollframe found
+                    if event.delta < 0:
+                        widget.canvas.yview_scroll(1, "units")
+                    elif event.delta > 0:
+                        widget.canvas.yview_scroll(-1, "units")
+                    break
+                elif hasattr(widget, "master"):
+                    # check parent widget, in search of a parent scrollframe
+                    widget = widget.master
+                else:
+                    # reached application root top level, no scrollframe found
+                    break
+        self.bind_all("<MouseWheel>", _scroll, "+")
 
     # ADD CUSTOM OVERRIDE METHODS THAT REDIRECT TO self.interior
     # ...
