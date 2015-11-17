@@ -177,7 +177,7 @@ class Text(mx.AllMixins, tk.Text):
             self.focus_set()
         
         try:
-            self.popup.post(event.x_root, event.y_root)
+            self.popup.tk_popup(event.x_root, event.y_root, 0)
         finally:
             self.popup.grab_release()
             

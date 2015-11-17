@@ -206,8 +206,8 @@ class Button(mx.AllMixins, ttk.Button):
             self.after(100, expand)
         # convert to tkinter
         tk_img = PIL.ImageTk.PhotoImage(img)
-        #if not kwargs.get("anchor"): kwargs["anchor"] = "center"
-        self.config(image=tk_img) #, **kwargs)
+        if not kwargs.get("anchor"): kwargs["anchor"] = "center"
+        self.config(image=tk_img, **kwargs)
         self.img = tk_img
 
 class OkButton(Button):
@@ -236,28 +236,7 @@ class CancelButton(Button):
             cancelfunc()
         self.winfo_toplevel().bind("<Escape>", runfunc)
 
-class ColorButton(Button):
-    def __init__(self, master, **kwargs):
-        # initialize
-        Button.__init__(self, master, **kwargs)
-        self._img = None
 
-        # maybe set random starting color?
-        # ...
-
-    def set_color(self, rgb, width=None, height=None):
-        #fill button image with the given color in a tkphotoimage
-        if not width:
-            if self._img: width = self._img.width()
-            else: width = self.winfo_reqwidth()
-        if not height:
-            if self._img: height = self._img.height()
-            else: width = self.winfo_reqheight()
-        img = tk.PhotoImage(width=width, height=height)
-        imgstring = " ".join(["{"+" ".join(["#%02x%02x%02x" %tuple(rgb) for _ in range(width)])+"}" for _ in range(height)])
-        img.put(imgstring)
-        self._img = img
-        self["image"] = img
 
 
 # Add PanedWindow

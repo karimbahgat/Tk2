@@ -5,7 +5,6 @@ if sys.version.startswith("2"):
 else:
     import tkinter as tk
 import ttk
-from . import basics
 from . import mixins as mx
 
 
@@ -61,7 +60,7 @@ class Ribbon(mx.AllMixins, ttk.Frame):
             elif self._anchor.startswith("w"): side = "top"
             elif self._anchor.startswith("e"): side = "top"
             elif self._anchor.startswith("s"): side = "left"
-        tab.selector = basics.Button(self.selectors_area, text=tab.name)
+        tab.selector = ttk.Button(self.selectors_area, text=tab.name)
         tab.selector.pack(side=side, padx=5)
         # make tab selector selectable
 ##        def mouse_in(event):
