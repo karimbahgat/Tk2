@@ -9,6 +9,8 @@ Compliant with Python 2.5-2.7
 
 Author: @ifthisthenbreak
 http://code.activestate.com/recipes/578897-supertext-scrollable-text-with-pop-up-menu-and-the/
+
+Expanded on by Karim Bahgat, 2015
 '''
 
 
@@ -23,11 +25,134 @@ else:
     import tkinter as tk
     from tkinter import Frame, Text, Scrollbar, Menu
     from tkMessageBox import askokcancel
+
 import ttk
 from . import mixins as mx
+from . import basics as bs
+from . import messagebox as msg
+from . import colorchooser as clr
+from . import scrollwidgets as scr
 
 
 # Classes
+
+class MultiTextSearch(scr.Frame):
+    def __init__(self, master, stylename, highlightstyle, **kwargs):
+        scr.Frame.__init__(self, master, **kwargs)
+        
+        self.namevar = tk.StringVar(self)
+        self.namevar.set(stylename)
+        self.style = highlightstyle
+        self.searchterms = []
+        
+        # add visuals
+        self.header = bs.Label(self, textvariable=self.namevar)
+        self.header.pack() #grid(row=0, column=0, columnspan=2, sticky="w")
+
+        def _changecolor():
+            rgb,hexdec = clr.askcolor()
+            self.style["background"] = rgb
+            self.colorselect.set_color(rgb)
+        self.colorselect = bs.ColorButton(self, command=_changecolor)
+        self.colorselect.set_color(self.style["background"], width=15, height=15)
+        self.colorselect.pack()
+
+        self.entry = bs.Entry(self)
+        self.entry.pack() #grid(row=1, column=0, sticky="w")
+
+        def _add_term(*pointless):
+            term = self.entry.get()
+            self.add_searchterm(term)
+            self.entry.delete("0", "end")
+            
+        self.addbut = bs.Button(self, text="+", command=_add_term)
+        self.addbut.pack() #grid(row=1, column=1, sticky="w")
+
+        self.entry.bind("<Return>", _add_term, "+")
+
+        self.termlist = scr.ScrollFrame(self)
+        self.termlist.pack(fill="both", expand=1) #grid(row=2, column=0, sticky="w")
+
+    def add_searchterm(self, searchterm):
+        if searchterm.strip():
+            # create term variable
+            termvar = tk.StringVar(self)
+            termvar.set(searchterm)
+
+            # add visual term representation
+            termlabel = SearchTerm(self.termlist, textvariable=termvar)
+            termlabel.pack(fill="x")
+
+            # link and remember termvar and widget
+            termlabel.var = termvar
+            termlabel.searchterms = self.searchterms
+            termvar.widget = termlabel
+            self.searchterms.append(termvar)
+
+    def highlight(self, textwidget, **kwargs):
+        
+        # configure style
+        stylename = self.namevar.get()
+        preppedstyle = self.style.copy()
+        preppedstyle["background"] = "#%02x%02x%02x" % preppedstyle["background"]
+        textwidget.tag_configure(stylename, **preppedstyle)
+
+        # search all terms
+        for termvar in self.searchterms:
+            term = termvar.get()
+
+            # highlight text
+            count = textwidget.highlight_pattern(term,
+                                                stylename,
+                                                nocase=True,
+                                                exact=False,
+                                                regexp=True)
+            if count:
+                # mark the terms in the termlist if at least one was found
+                termvar.widget["background"] = "#%02x%02x%02x" % self.style["background"]
+            else:
+                # reset to normal
+                termvar.widget["background"] = "light grey" # NOT SURE IS CORRECT COLOR, SWITCH TO COLOR TEMPLATES...
+
+
+class SearchTerm(bs.Label):
+    def __init__(self, master, **kwargs):
+        bs.Label.__init__(self, master)
+
+##        global curfind
+##        curfind = "1.0"
+##
+##        def seeterm(event):
+##            print event.widget.master.var.get()
+##            startpos,endpos = GLOBALS["articlescreen"].textpane.article.next_pattern(" and ", current=curfind)
+##            GLOBALS["articlescreen"].textpane.article.see(endpos)
+##            global curfind
+##            curfind = endpos
+
+        self.label = bs.Label(self, **kwargs)
+        self.label.pack(side="left", fill="x", expand=1)
+##        self.label.bind("<Button-1>", seeterm)
+
+        # delete button
+        def delfunc():
+            proceed = msg.askokcancel("Delete term?", "You are about to delete a term from the list of relevance terms. Are you sure you want to continue?")
+            if proceed:
+                self.searchterms.remove(self.var)
+                self.destroy()
+        self.delbut = bs.Button(self, text="X", command=delfunc)
+        self.delbut.pack(side="right")
+
+        # next/prev buttons
+        self.nextbut = bs.Button(self, text=">")
+        self.nextbut.pack(side="right")
+        self.prevbut = bs.Button(self, text="<")
+        self.prevbut.pack(side="right")
+
+    def __setitem__(self, key, value):
+        # configure properties for both the main and the subwidgets
+        self.label[key] = value
+        self.__dict__[key] = value
+        
 
 class Text(mx.AllMixins, tk.Text):
     
@@ -169,6 +294,9 @@ class Text(mx.AllMixins, tk.Text):
             return index, index+"-%sc"%count.get()
         else:
             return None
+
+
+    # MISC INTERNALS
 
     def _show_popup(self, event):
         '''right-click popup menu'''

@@ -8,24 +8,43 @@ functionality to a standard text widget:
 Compliant with Python 2.5-2.7
 
 Author: @ifthisthenbreak
+http://code.activestate.com/recipes/578897-supertext-scrollable-text-with-pop-up-menu-and-the/
 '''
 
-from Tkinter import Tk, Frame, Text, Scrollbar, Menu
-from tkMessageBox import askokcancel
+
+# Imports
+
+import sys
+if sys.version.startswith("2"):
+    import Tkinter as tk
+    from Tkinter import Frame, Text, Scrollbar, Menu
+    from tkMessageBox import askokcancel
+else:
+    import tkinter as tk
+    from tkinter import Frame, Text, Scrollbar, Menu
+    from tkMessageBox import askokcancel
+import ttk
+from . import mixins as mx
 
 
-class SuperText(Text):
+# Classes
+
+class Text(mx.AllMixins, tk.Text):
     
     def __init__(self, parent, scrollbar=True, **kw):
-        
+
+        parent = mx.get_master(parent)
         self.parent = parent
         
         frame = Frame(parent)
         frame.pack(fill='both', expand=True)
         
         # text widget
-        Text.__init__(self, frame, **kw)
-        self.pack(side='left', fill='both', expand=True)
+        if "wrap" not in kw:
+            kw["wrap"] = "word"
+        tk.Text.__init__(self, frame, **kw)
+        #self.pack(side='left', fill='both', expand=True)
+        mx.AllMixins.__init__(self, parent)
         
         # scrollbar
         if scrollbar:
@@ -42,12 +61,18 @@ class SuperText(Text):
         self.popup.add_command(label='Select All', command=self._select_all)
         self.popup.add_command(label='Clear All', command=self._clear_all)
         self.bind('<Button-3>', self._show_popup)
+
+        # only allow mouse scroll when mouse inside text
+        self.bind("<Leave>", lambda event: self.winfo_toplevel().focus_set(), "+")
+        self.bind("<Enter>", lambda event: self.focus_set(), "+")
         
     def apply_theme(self, theme='standard'):
         '''theme=['standard', 'typewriter', 'terminal']'''
 
         if theme == 'typewriter':
             '''takes all inserted text and inserts it one char every 100ms'''
+            options = {"font": ('Times', 10, 'bold')}
+            self.config(options)
             text = self.get('1.0', 'end')
             self.delete('1.0', 'end')
             self.char_index = 0
@@ -55,6 +80,8 @@ class SuperText(Text):
             
         elif theme == 'terminal':
             '''blocky insert cursor'''
+            options = {'bg': 'black', 'fg': 'white', 'font': ('Courier', 10)}
+            self.config(options)
             self.cursor = '1.0'
             self.fg = self.cget('fg')
             self.bg = self.cget('bg')
@@ -62,7 +89,87 @@ class SuperText(Text):
             self.config(insertwidth=0)
             self._blink_cursor()
             self._place_cursor()
-        
+
+        elif theme == 'matrix':
+            '''blocky insert cursor'''
+            options = {'bg': 'black', 'fg': 'green', 'font': ('Courier', 10)}
+            self.config(options)
+            self.cursor = '1.0'
+            self.fg = self.cget('fg')
+            self.bg = self.cget('bg')
+            self.switch = self.fg
+            self.config(insertwidth=0)
+            self._blink_cursor()
+            self._place_cursor()
+
+    def highlight_pattern(self, pattern, tag, start="1.0", end="end",
+                          regexp=False, nocase=True, exact=True, **kwargs):
+        '''Apply the given tag to all text that matches the given pattern
+
+        If 'regexp' is set to True, pattern will be treated as a regular
+        expression.
+
+        From: http://stackoverflow.com/questions/3781670/how-to-highlight-text-in-a-tkinter-text-widget
+        '''
+
+        if not pattern:
+            return 0
+        start = self.index(start)
+        end = self.index(end)
+        self.mark_set("matchStart", start)
+        self.mark_set("matchEnd", start)
+        self.mark_set("searchLimit", end)
+
+        count = tk.IntVar()
+        while True:
+            index = self.search(pattern, "matchEnd", "searchLimit",
+                                count=count, regexp=regexp, nocase=nocase,
+                                exact=exact, **kwargs)
+            if index: 
+                self.mark_set("matchStart", index)
+                self.mark_set("matchEnd", "%s+%sc" % (index, count.get()))
+                self.tag_add(tag, "matchStart", "matchEnd")
+            else:
+                break
+        return count.get()
+
+    def clear_highlights(self):
+        self.tag_delete(*self.tag_names())
+
+    def next_pattern(self, pattern, current,
+                     regexp=False, nocase=True, exact=True, **kwargs):
+        if not pattern:
+            return None
+        start = self.index(current)
+        end = self.index("end")
+
+        count = tk.IntVar()
+        index = self.search(pattern, start, end,
+                            count=count, regexp=regexp, nocase=nocase,
+                            exact=exact, **kwargs)
+        if index:
+            print index, count.get()
+            return index, index+"+%sc"%count.get()
+        else:
+            return None
+
+    def prev_pattern(self, pattern, current,
+                     regexp=False, nocase=True, exact=True, **kwargs):
+        if not pattern:
+            return None
+        start = self.index("1.0")
+        end = self.index(current)
+
+        count = tk.IntVar()
+        index = self.search(pattern, start, end,
+                            count=count, regexp=regexp, nocase=nocase,
+                            exact=exact, backwards=True, **kwargs)
+        if index:
+            print index, count.get()
+            return index, index+"-%sc"%count.get()
+        else:
+            return None
+
     def _show_popup(self, event):
         '''right-click popup menu'''
         
@@ -70,7 +177,7 @@ class SuperText(Text):
             self.focus_set()
         
         try:
-            self.popup.tk_popup(event.x_root, event.y_root, 0)
+            self.popup.post(event.x_root, event.y_root)
         finally:
             self.popup.grab_release()
             
@@ -117,7 +224,7 @@ class SuperText(Text):
         self.insert('insert', text[self.char_index])
         self.char_index += 1
 
-        if self.char_index == len(text):
+        if hasattr(self, "typer") and self.char_index == len(text):
             self.after_cancel(self.typer)
         else:
             self.typer = self.after(100, self._typewriter, text)
@@ -158,37 +265,3 @@ class SuperText(Text):
         self.after(600, self._blink_cursor)
 
 
-lorem = '''Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
-eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'''
-
-def typewriter_sample():
-    
-    typewriter = SuperText(root, scrollbar=False, font=('Times', 10, 'bold'))
-    typewriter.pack(fill='both', expand=True)
-    
-    typewriter.insert(1.0, lorem)
-    typewriter.apply_theme(theme='typewriter')
-
-def terminal_sample():
-
-    options = {'bg': 'black', 'fg': 'green', 'font': ('Courier', 10)}
-    
-    terminal = SuperText(root, scrollbar=True)
-    terminal.pack(fill='both', expand=True)
-    
-    terminal.insert(1.0, lorem)
-    terminal.config(options)
-    terminal.apply_theme(theme='terminal')
-    
-if __name__ == '__main__':
-    
-    root = Tk()
-
-    typewriter_sample()
-    terminal_sample()
-
-    root.mainloop()
