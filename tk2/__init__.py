@@ -6,7 +6,7 @@ to make it easier and more flexible to create GUI applications.
 
 from .basics import *
 from .scrollwidgets import *
-from .texteditor import Text
+from .texteditor import Text, MultiTextSearch
 from .variables import *
 
 # Later

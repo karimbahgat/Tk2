@@ -37,13 +37,15 @@ from . import scrollwidgets as scr
 # Classes
 
 class MultiTextSearch(scr.Frame):
-    def __init__(self, master, stylename, highlightstyle, **kwargs):
+    def __init__(self, master, stylename, highlightstyle, imgs={}, **kwargs):
         scr.Frame.__init__(self, master, **kwargs)
         
         self.namevar = tk.StringVar(self)
         self.namevar.set(stylename)
         self.style = highlightstyle
         self.searchterms = []
+        self.dependents = []
+        self.imgs = imgs
         
         # add visuals
         self.header = bs.Label(self, textvariable=self.namevar)
@@ -53,6 +55,7 @@ class MultiTextSearch(scr.Frame):
             rgb,hexdec = clr.askcolor()
             self.style["background"] = rgb
             self.colorselect.set_color(rgb)
+            self.highlight()
         self.colorselect = bs.ColorButton(self, command=_changecolor)
         self.colorselect.set_color(self.style["background"], width=15, height=15)
         self.colorselect.pack()
@@ -67,6 +70,8 @@ class MultiTextSearch(scr.Frame):
             
         self.addbut = bs.Button(self, text="+", command=_add_term)
         self.addbut.pack() #grid(row=1, column=1, sticky="w")
+        if "addbut" in self.imgs:
+            self.addbut.set_icon(**self.imgs["addbut"])
 
         self.entry.bind("<Return>", _add_term, "+")
 
@@ -80,73 +85,100 @@ class MultiTextSearch(scr.Frame):
             termvar.set(searchterm)
 
             # add visual term representation
-            termlabel = SearchTerm(self.termlist, textvariable=termvar)
+            termlabel = SearchTerm(self.termlist, textvariable=termvar, imgs=self.imgs)
             termlabel.pack(fill="x")
 
             # link and remember termvar and widget
             termlabel.var = termvar
-            termlabel.searchterms = self.searchterms
+            termlabel.multitext = self
             termvar.widget = termlabel
             self.searchterms.append(termvar)
+            self.highlight()
 
-    def highlight(self, textwidget, **kwargs):
-        
-        # configure style
-        stylename = self.namevar.get()
-        preppedstyle = self.style.copy()
-        preppedstyle["background"] = "#%02x%02x%02x" % preppedstyle["background"]
-        textwidget.tag_configure(stylename, **preppedstyle)
+    def highlight(self, **kwargs):
 
-        # search all terms
-        for termvar in self.searchterms:
-            term = termvar.get()
+        # for all connected textwidgets
+        for textwidget in self.dependents:
 
-            # highlight text
-            count = textwidget.highlight_pattern(term,
-                                                stylename,
-                                                nocase=True,
-                                                exact=False,
-                                                regexp=True)
-            if count:
-                # mark the terms in the termlist if at least one was found
-                termvar.widget["background"] = "#%02x%02x%02x" % self.style["background"]
-            else:
-                # reset to normal
-                termvar.widget["background"] = "light grey" # NOT SURE IS CORRECT COLOR, SWITCH TO COLOR TEMPLATES...
+            # configure highlightstyle
+            stylename = self.namevar.get()
+            print stylename, textwidget.tag_names()
+            textwidget.clear_highlights(stylename)
+            preppedstyle = self.style.copy()
+            preppedstyle["background"] = "#%02x%02x%02x" % preppedstyle["background"]
+            textwidget.tag_configure(stylename, **preppedstyle)
+            
+            # search all terms
+            for termvar in self.searchterms:
+                term = termvar.get()
+
+                # highlight text
+                count = textwidget.highlight_pattern(term,
+                                                    stylename,
+                                                    nocase=True,
+                                                    exact=False,
+                                                    regexp=True)
+                if count:
+                    # mark the terms in the termlist if at least one was found
+                    termvar.widget["background"] = "#%02x%02x%02x" % self.style["background"]
+                else:
+                    # reset to normal
+                    termvar.widget["background"] = "light grey" # NOT SURE IS CORRECT COLOR, SWITCH TO COLOR TEMPLATES...
 
 
 class SearchTerm(bs.Label):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, imgs={}, **kwargs):
         bs.Label.__init__(self, master)
-
-##        global curfind
-##        curfind = "1.0"
-##
-##        def seeterm(event):
-##            print event.widget.master.var.get()
-##            startpos,endpos = GLOBALS["articlescreen"].textpane.article.next_pattern(" and ", current=curfind)
-##            GLOBALS["articlescreen"].textpane.article.see(endpos)
-##            global curfind
-##            curfind = endpos
 
         self.label = bs.Label(self, **kwargs)
         self.label.pack(side="left", fill="x", expand=1)
-##        self.label.bind("<Button-1>", seeterm)
+
+        self.imgs = imgs
 
         # delete button
-        def delfunc():
-            proceed = msg.askokcancel("Delete term?", "You are about to delete a term from the list of relevance terms. Are you sure you want to continue?")
-            if proceed:
-                self.searchterms.remove(self.var)
-                self.destroy()
-        self.delbut = bs.Button(self, text="X", command=delfunc)
+        self.delbut = bs.Button(self, text="X", command=self._destroy)
         self.delbut.pack(side="right")
+        if "delbut" in self.imgs:
+            self.delbut.set_icon(**self.imgs["delbut"])
 
         # next/prev buttons
-        self.nextbut = bs.Button(self, text=">")
+        def seeterm(forward=True):
+            for textwidget in self.multitext.dependents:
+                term = self.var.get()
+                    
+                if forward:
+                    result = textwidget.next_pattern(term,
+                                                     current="insert",
+                                                    nocase=True,
+                                                    exact=False,
+                                                    regexp=True)
+                else:
+                    result = textwidget.prev_pattern(term,
+                                                     current="insert",
+                                                    nocase=True,
+                                                    exact=False,
+                                                    regexp=True)
+                    
+                if result:
+                    startpos,endpos = result
+                    textwidget.see(endpos)
+                    textwidget.mark_set("insert", endpos)
+        
+        self.nextbut = bs.Button(self, text=">", command=lambda: seeterm(forward=True))
         self.nextbut.pack(side="right")
-        self.prevbut = bs.Button(self, text="<")
+        if "nextbut" in self.imgs:
+            self.nextbut.set_icon(**self.imgs["nextbut"])
+        self.prevbut = bs.Button(self, text="<", command=lambda: seeterm(forward=False))
         self.prevbut.pack(side="right")
+        if "prevbut" in self.imgs:
+            self.prevbut.set_icon(**self.imgs["prevbut"])
+
+    def _destroy(self):
+        proceed = msg.askokcancel("Delete term?", "You are about to delete a term from the list of relevance terms. Are you sure you want to continue?")
+        if proceed:
+            self.multitext.searchterms.remove(self.var)
+            self.multitext.highlight()
+            self.destroy()
 
     def __setitem__(self, key, value):
         # configure properties for both the main and the subwidgets
@@ -258,8 +290,9 @@ class Text(mx.AllMixins, tk.Text):
                 break
         return count.get()
 
-    def clear_highlights(self):
-        self.tag_delete(*self.tag_names())
+    def clear_highlights(self, *tagnames):
+        names = tagnames or self.tag_names()
+        self.tag_delete(*names)
 
     def next_pattern(self, pattern, current,
                      regexp=False, nocase=True, exact=True, **kwargs):
@@ -273,7 +306,6 @@ class Text(mx.AllMixins, tk.Text):
                             count=count, regexp=regexp, nocase=nocase,
                             exact=exact, **kwargs)
         if index:
-            print index, count.get()
             return index, index+"+%sc"%count.get()
         else:
             return None
@@ -282,15 +314,14 @@ class Text(mx.AllMixins, tk.Text):
                      regexp=False, nocase=True, exact=True, **kwargs):
         if not pattern:
             return None
-        start = self.index("1.0")
-        end = self.index(current)
+        start = self.index(current)
+        end = self.index("1.0")
 
         count = tk.IntVar()
         index = self.search(pattern, start, end,
                             count=count, regexp=regexp, nocase=nocase,
                             exact=exact, backwards=True, **kwargs)
         if index:
-            print index, count.get()
             return index, index+"-%sc"%count.get()
         else:
             return None

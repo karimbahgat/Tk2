@@ -13,11 +13,14 @@ txt = tk2.Text(win)
 txt.insert("1.0", "hello my name is")
 txt.pack(side="right")
 
-def _update_highlight():
-    txt.clear_highlights()
-    src.highlight(txt)
-    src2.highlight(txt)
-    src.after(500, _update_highlight)
-src.after(500, _update_highlight)
+src.dependents = [txt]
+src2.dependents = [txt]
+
+##def _update_highlight():
+##    txt.clear_highlights()
+##    src.highlight(txt)
+##    src2.highlight(txt)
+##    txt.after(100, _update_highlight)
+##src.after(100, _update_highlight)
 
 win.mainloop()
