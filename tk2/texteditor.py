@@ -42,7 +42,7 @@ class MultiTextSearch(scr.Frame):
         
         self.namevar = tk.StringVar(self)
         self.namevar.set(stylename)
-        self.style = highlightstyle
+        self.style = highlightstyle.copy()
         self.searchterms = []
         self.dependents = []
         self.imgs = imgs
@@ -95,14 +95,13 @@ class MultiTextSearch(scr.Frame):
             self.searchterms.append(termvar)
             self.highlight()
 
-    def highlight(self, **kwargs):
+    def highlight(self, easysearch=True, **kwargs):
 
         # for all connected textwidgets
         for textwidget in self.dependents:
 
             # configure highlightstyle
             stylename = self.namevar.get()
-            print stylename, textwidget.tag_names()
             textwidget.clear_highlights(stylename)
             preppedstyle = self.style.copy()
             preppedstyle["background"] = "#%02x%02x%02x" % preppedstyle["background"]
@@ -113,17 +112,47 @@ class MultiTextSearch(scr.Frame):
                 term = termvar.get()
 
                 # highlight text
-                count = textwidget.highlight_pattern(term,
-                                                    stylename,
-                                                    nocase=True,
-                                                    exact=False,
-                                                    regexp=True)
+                if easysearch:
+                    # easy stata-like search syntax
+                    term = easy_searchpattern_to_regex(term)
+                    count = textwidget.highlight_pattern(term,
+                                                        stylename,
+                                                        nocase=True,
+                                                        exact=False,
+                                                        regexp=True)
+                else:
+                    # raw syntax of either exact match or complex regex, depending on kwargs
+                    count = textwidget.highlight_pattern(term,
+                                                        stylename,
+                                                        **kwargs)
+                    
                 if count:
                     # mark the terms in the termlist if at least one was found
                     termvar.widget["background"] = "#%02x%02x%02x" % self.style["background"]
                 else:
                     # reset to normal
                     termvar.widget["background"] = "light grey" # NOT SURE IS CORRECT COLOR, SWITCH TO COLOR TEMPLATES...
+
+
+def easy_searchpattern_to_regex(term):
+    term = term.replace("*", "\\w*") # wildcards must be part of the same word
+    term = term.replace(".", "\\.") # allow matching periods literally
+
+    # term (including wildcards) only applies to one word at a time
+    # if term starts or ends with alphanumeric char, force bound the term to the closest wordbreak
+    # otherwise, it is already ending with wordbreak, so adding an additional wordbreak regex will
+    # ...actually result in no match (eg in acronyms like u.s.a.)
+    if term[-1].isalnum():
+        term = term + "\\y"
+    if term[0].isalnum():
+        term = "\\y" + term
+
+    # in this version acronyms will match (but spaces at start or end will fail)
+    #term = "".join(["(?:\W+|^)",   # instead of wordbreak, preceding char is a nonword char or start of text
+    #                "(%s)" % term,   # look for the term
+    #                "(?:\W+|$)"])   # instead of wordbreak, proceding char is a nonword char or end of text
+
+    return term
 
 
 class SearchTerm(bs.Label):
