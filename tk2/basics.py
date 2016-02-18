@@ -14,6 +14,7 @@ else: import tkinter as tk
 import ttk
 from . import mixins as mx
 from . import scrollwidgets
+from . import variables as vr
 
 
 # Classes
@@ -39,11 +40,64 @@ class Label(mx.AllMixins, ttk.Label):
 ##        entry.bind_once("<Escape>", dropentry)
 ##        entry.bind_once("<Return>", acceptentry)
 
-class Entry(mx.AllMixins, ttk.Entry):
+class Entry(Label):
     def __init__(self, master, **kwargs):
         master = mx.get_master(master)
-        ttk.Entry.__init__(self, master, **kwargs)
-        mx.AllMixins.__init__(self, master)
+        Label.__init__(self, master)
+
+        # add label
+        if "label" in kwargs:
+            label = tk.Label(self, text=kwargs.pop("label"))
+            label.pack(side=kwargs.pop("labelside","left"))
+
+##        placeholder = kwargs.pop("placeholder",None)
+        defaultval = kwargs.pop("default",None)
+        if not "textvariable" in kwargs:
+            kwargs["textvariable"] = vr.StringVar()
+
+        entry = ttk.Entry(self, **kwargs)
+        entry.pack(side=kwargs.pop("entryside","right"))
+
+        # placeholder
+        # (not finished yet...)
+##        if placeholder:
+##            def focusin(*pointless):
+##                if entry._placedummy:
+##                    kwargs["textvariable"].set("")
+##            def focusout(*pointless):
+##                if not entry._placedummy and not kwargs["textvariable"].get():
+##                    entry["foreground"] = "grey"
+##                    kwargs["textvariable"].set(placeholder)
+##                    entry._placedummy = True
+##                else:
+##                    entry["foreground"] = "black"
+##                    entry._placedummy = False
+##            #kwargs["textvariable"].trace("w", checkempty)
+##            entry.bind("<FocusIn>", focusin)
+##            entry.bind("<FocusOut>", focusout)
+
+        # default value
+        if defaultval:
+            kwargs["textvariable"].set(defaultval)
+            
+##        else:
+##            entry._placedummy = True
+##            kwargs["textvariable"].set(placeholder)
+##            entry["foreground"] = "grey"
+
+        self.interior = entry
+
+##    def __getattr__(self, attr):
+##        return self.__getattribute__(attr)
+
+    def get(self):
+        return self.interior.get()
+
+    def insert(self, *args, **kwargs):
+        self.interior.insert(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        self.interior.delete(*args, **kwargs)
 
 class Checkbutton(mx.AllMixins, tk.Checkbutton):
     def __init__(self, master, **kwargs):

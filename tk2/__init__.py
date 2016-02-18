@@ -16,6 +16,7 @@ from .progbar import *
 from .ribbon import *
 #from orderedlist import *
 #from calendar import *
+from web import *
 
 from . import filedialog
 from . import messagebox
