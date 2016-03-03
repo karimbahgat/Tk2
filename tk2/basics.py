@@ -111,11 +111,32 @@ class Radiobutton(mx.AllMixins, tk.Radiobutton):
         tk.Radiobutton.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
-class Dropdown(mx.AllMixins, ttk.Combobox):
+class Dropdown(mx.AllMixins, tk.Label):
     def __init__(self, master, **kwargs):
         master = mx.get_master(master)
-        ttk.Combobox.__init__(self, master, **kwargs)
+        tk.Label.__init__(self, master)
         mx.AllMixins.__init__(self, master)
+
+        # add label
+        if "label" in kwargs:
+            label = tk.Label(self, text=kwargs.pop("label"))
+            label.pack(side=kwargs.pop("labelside","left"))
+
+        combobox = ttk.Combobox(self, **kwargs)
+        combobox.pack(side=kwargs.pop("entryside","right"))
+        self.interior = combobox
+
+    def set(self, value):
+        return self.interior.set(value)
+
+    def get(self):
+        return self.interior.get()
+
+    def __getitem__(self, item):
+        return self.interior[item]
+        
+    def __setitem__(self, item, val):
+        self.interior[item] = val
 
 class Separator(mx.AllMixins, ttk.Separator):
     def __init__(self, master, **kwargs):
