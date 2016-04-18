@@ -25,7 +25,7 @@ class Multiselect(mx.AllMixins, tk.Frame):
         tk.Frame.__init__(self, master, **kwargs)
 
         # add the listbox where all selections will be added
-        inputwidget = sw.Listbox(self)
+        inputwidget = self.inputwidget = sw.Listbox(self)
         inputwidget.pack(side="right", anchor="ne", padx=3)
         
         # add a listbox of choices to choose from
@@ -57,6 +57,9 @@ class Multiselect(mx.AllMixins, tk.Frame):
         for ch in choices:
             fromlist.insert(tk.END, ch)
         fromlist.pack(side="right", anchor="ne", padx=3)
+
+    def get(self):
+        return self.inputwidget.get()
 
 
 class Multientry(mx.AllMixins, tk.Frame):

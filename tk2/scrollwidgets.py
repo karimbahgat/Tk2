@@ -65,6 +65,19 @@ class Listbox(tk.Frame, mx.AllMixins):
     def insert(self, *args, **kwargs):
         return self.listbox.insert(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        return self.listbox.delete(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        if args:
+            return self.listbox.get(*args, **kwargs)
+        else:
+            # no specific index requested, so get all items in the list
+            return self.listbox.get(0, tk.END)
+
+    def curselection(self, *args, **kwargs):
+        return self.listbox.curselection(*args, **kwargs)
+
 ##class Listbox(tk.Listbox, mx.AllMixins):
 ##    def __init__(self, master, items=[], *args, **kwargs):
 ##
