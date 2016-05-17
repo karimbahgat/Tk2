@@ -53,10 +53,15 @@ class Multiselect(mx.AllMixins, tk.Frame):
         dropbutton.pack(anchor="ne", padx=3, pady=3)
         
         # create and populate the choices listbox
-        fromlist = sw.Listbox(self)
+        fromlist = self.fromlist = sw.Listbox(self)
         for ch in choices:
             fromlist.insert(tk.END, ch)
         fromlist.pack(side="right", anchor="ne", padx=3)
+
+    def set_choices(self, choices):
+        self.fromlist.delete(0, tk.END)
+        for ch in choices:
+            self.fromlist.insert(tk.END, ch)
 
     def get(self):
         return self.inputwidget.get()

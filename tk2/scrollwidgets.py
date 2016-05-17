@@ -328,6 +328,32 @@ class ScrollFrame(mx.AllMixins, tk.LabelFrame):
     # ADD CUSTOM OVERRIDE METHODS THAT REDIRECT TO self.interior
     # ...
 
+class Treeview(mx.AllMixins, tk.LabelFrame):
+    def __init__(self, master, **kwargs):
+        master = mx.get_master(master)
+        tk.LabelFrame.__init__(self, master) # doesnt yet allow frame label...
+        mx.AllMixins.__init__(self, master)
 
+        self.tree = ttk.Treeview(master, **kwargs)
+        ysb = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        xsb = ttk.Scrollbar(self, orient="horizontal", command=self.tree.xview)
+        self.tree['yscroll'] = ysb.set
+        self.tree['xscroll'] = xsb.set
 
+        # add tree and scrollbars to frame
+        self.tree.grid(in_=self, row=0, column=0, sticky="nsew")
+        ysb.grid(in_=self, row=0, column=1, sticky="ns")
+        xsb.grid(in_=self, row=1, column=0, sticky="ew")
+         
+        # set frame resizing priorities (DOESNT WORK)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
+    def heading(self, *args, **kwargs):
+        return self.tree.heading(*args, **kwargs)
+
+    def column(self, *args, **kwargs):
+        return self.tree.column(*args, **kwargs)
+
+    def insert(self, *args, **kwargs):
+        return self.tree.insert(*args, **kwargs)

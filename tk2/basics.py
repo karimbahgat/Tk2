@@ -150,12 +150,6 @@ class Sizegrip(mx.AllMixins, ttk.Sizegrip):
         ttk.Sizegrip.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
 
-class Treeview(mx.AllMixins, ttk.Treeview):
-    def __init__(self, master, **kwargs):
-        master = mx.get_master(master)
-        ttk.Treeview.__init__(self, master, **kwargs)
-        mx.AllMixins.__init__(self, master)
-
 class Scrollbar(mx.AllMixins, ttk.Scrollbar):
     def __init__(self, master, **kwargs):
         master = mx.get_master(master)
