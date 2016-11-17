@@ -26,7 +26,7 @@ class Multiselect(mx.AllMixins, tk.Frame):
 
         # add the listbox where all selections will be added
         inputwidget = self.inputwidget = sw.Listbox(self)
-        inputwidget.pack(side="right", anchor="ne", padx=3)
+        inputwidget.pack(fill="x", expand=1, side="right", anchor="ne", padx=3)
         
         # add a listbox of choices to choose from
         def addtolist():
@@ -56,7 +56,7 @@ class Multiselect(mx.AllMixins, tk.Frame):
         fromlist = self.fromlist = sw.Listbox(self)
         for ch in choices:
             fromlist.insert(tk.END, ch)
-        fromlist.pack(side="right", anchor="ne", padx=3)
+        fromlist.pack(fill="x", expand=1, side="left", anchor="ne", padx=3)
 
     def set_choices(self, choices):
         self.fromlist.delete(0, tk.END)
@@ -74,7 +74,7 @@ class Multientry(mx.AllMixins, tk.Frame):
 
         # add the listbox where all selections will be added
         inputwidget = sw.Listbox(self)
-        inputwidget.pack(side="right", anchor="ne", padx=3)
+        inputwidget.pack(fill="x", expand=1, side="right", anchor="ne", padx=3)
         
         # add a freeform entry field and button to add to the listbox
         def addtolist():
@@ -97,6 +97,6 @@ class Multientry(mx.AllMixins, tk.Frame):
         
         # place the freeform text entry widget
         addentry = bs.Entry(self)
-        addentry.pack(side="right", anchor="ne", padx=3)
+        addentry.pack(fill="x", expand=1, side="left", anchor="ne", padx=3)
         
 
