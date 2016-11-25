@@ -6,8 +6,10 @@
 import sys
 if sys.version.startswith("2"):
     import Tkinter as tk
+    import tkFont
 else:
     import tkinter as tk
+    import tkinter.font as tkFont
 import ttk
 from . import mixins as mx
 
@@ -348,12 +350,79 @@ class Treeview(mx.AllMixins, tk.LabelFrame):
         # set frame resizing priorities (DOESNT WORK)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-
+  
     def heading(self, *args, **kwargs):
         return self.tree.heading(*args, **kwargs)
 
     def column(self, *args, **kwargs):
         return self.tree.column(*args, **kwargs)
-
+    
     def insert(self, *args, **kwargs):
         return self.tree.insert(*args, **kwargs)
+
+
+class Table(Treeview):
+    def __init__(self, master, **kwargs):
+        Treeview.__init__(self, master)
+        # restrict icon column
+        self.column("#0", stretch=False, width=12)
+
+    def populate(self, fields, rows):
+        # define column indexes/names
+        self.tree["columns"] = fields 
+
+        # column options...
+        for f in fields:
+            self.heading(f, text=f, command=lambda f=f: self.sortby(f, 0))
+            self.column(f, width=tkFont.Font().measure(f))
+
+        # rows
+        for row in rows:
+            self.insert('', 'end', values=row)
+
+    def sortby(self, field, descending):
+        tree = self.tree
+
+        items = ((tree.set(child, field), child) for child in tree.get_children(''))
+        sort = sorted(items, reverse=descending)
+        for indx, item in enumerate(sort):
+            tree.move(item[1], '', indx)
+
+        tree.heading(field,
+                    command=lambda field=field: self.sortby(field, int(not descending)))
+
+class OrderedList(mx.AllMixins, tk.LabelFrame):
+    def __init__(self, master, **kwargs):
+        """
+        Should have predefined bindings for drag and drop, as a shallow wrapper around
+        a real list, all changes affecting the order of the underlying model. 
+        """
+        master = mx.get_master(master)
+        tk.LabelFrame.__init__(self, master) # doesnt yet allow frame label...
+        mx.AllMixins.__init__(self, master)
+
+        # Make the top header
+        self.header = tk.Label(self, text="Items:")
+        self.header.pack(side="top", fill="x")
+
+        self.items = []
+        self.listarea = ScrollFrame(self)
+        self.listarea.pack(fill="both", expand=1)
+
+    def add_item(self, item, decorate=None):
+        widget = OrderedListItem(self.listarea, item)
+        widget.pack()
+        if not decorate:
+            def decorate(w):
+                w["text"] = repr(w.item)[:50]
+        decorate(widget)
+        self.items.append(widget)
+        return widget
+
+class OrderedListItem(mx.AllMixins, tk.Label):
+    def __init__(self, master, item, **kwargs):
+        master = mx.get_master(master)
+        tk.Label.__init__(self, master) # doesnt yet allow frame label...
+        mx.AllMixins.__init__(self, master)
+
+        self.item = item
