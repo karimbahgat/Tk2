@@ -54,6 +54,7 @@ class Entry(Label):
         defaultval = kwargs.pop("default",None)
         if not "textvariable" in kwargs:
             kwargs["textvariable"] = vr.StringVar()
+        self.var = kwargs["textvariable"]
 
         entry = ttk.Entry(self, **kwargs)
         entry.pack(side=kwargs.pop("entryside","right"))
@@ -78,7 +79,7 @@ class Entry(Label):
 
         # default value
         if defaultval:
-            kwargs["textvariable"].set(defaultval)
+            self.var.set(defaultval)
             
 ##        else:
 ##            entry._placedummy = True
@@ -90,8 +91,11 @@ class Entry(Label):
 ##    def __getattr__(self, attr):
 ##        return self.__getattribute__(attr)
 
+    def set(self, value):
+        return self.var.set(value)
+
     def get(self):
-        return self.interior.get()
+        return self.var.get()
 
     def insert(self, *args, **kwargs):
         self.interior.insert(*args, **kwargs)
@@ -104,6 +108,13 @@ class Checkbutton(mx.AllMixins, tk.Checkbutton):
         master = mx.get_master(master)
         tk.Checkbutton.__init__(self, master, **kwargs)
         mx.AllMixins.__init__(self, master)
+
+        if not "variable" in kwargs:
+            kwargs["variable"] = vr.IntVar()
+        self.var = kwargs["variable"]
+
+    def get(self):
+        return self.var.get()
 
 class Radiobutton(mx.AllMixins, tk.Radiobutton):
     def __init__(self, master, **kwargs):

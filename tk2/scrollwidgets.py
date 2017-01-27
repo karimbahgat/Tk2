@@ -219,6 +219,8 @@ class Frame(mx.AllMixins, tk.LabelFrame):
     def __init__(self, parent, *args, **kwargs):
         # subclass
         parent = mx.get_master(parent)
+        if "label" in kwargs:
+            kwargs["text"] = kwargs.pop("label")
         tk.LabelFrame.__init__(self, parent, *args, **kwargs)
         mx.AllMixins.__init__(self, parent)
 
@@ -241,6 +243,8 @@ class ScrollFrame(mx.AllMixins, tk.LabelFrame):
         # control main frame widget args
         frameargs = kwargs.copy()
         anchor = frameargs.pop("anchor", None)
+        if "label" in frameargs:
+            frameargs["text"] = frameargs.pop("label")
         if not "relief" in frameargs and not frameargs.get("text",None) and not "labelwidget" in frameargs:
             frameargs["relief"] = "flat"
             frameargs["borderwidth"] = 0
@@ -253,6 +257,7 @@ class ScrollFrame(mx.AllMixins, tk.LabelFrame):
 
         # also filter out labelframe options for the regular frame interior
         interiorargs.pop("text", None)
+        interiorargs.pop("label", None)
         interiorargs.pop("labelanchor", None)
         interiorargs.pop("labelwidget", None)
         
@@ -367,26 +372,53 @@ class Table(Treeview):
         # restrict icon column
         self.column("#0", stretch=False, width=12)
 
+##    def values(self, field):
+##        # TODO: should have better validation, eg by specifying type for each column instead of guessing
+##        # or by storing the populated rows, and just mirroring them in the table
+##        
+##        def value_from_string(val):
+##            try:
+##                # see if maybe converts to some python type
+##                return float(val)
+##            except:
+##                # check for missing
+##                if val == "None":
+##                    return None
+##                elif val == "nan":
+##                    return float("nan")
+##                else:
+##                    # is supposed to be string
+##                    return val
+##
+##        tree = self.tree
+##        for childid in tree.get_children(''):
+##            valuestring = tree.set(childid, field)
+##            value = value_from_string(valuestring)
+##            yield childid, value
+
     def populate(self, fields, rows):
         # define column indexes/names
         self.tree["columns"] = fields 
 
         # column options...
+        self.fields = list(fields)
         for f in fields:
             self.heading(f, text=f, command=lambda f=f: self.sortby(f, 0))
             self.column(f, width=tkFont.Font().measure(f))
 
         # rows
-        for row in rows:
+        self.rows = list(rows)
+        for row in self.rows:
             self.insert('', 'end', values=row)
 
     def sortby(self, field, descending):
         tree = self.tree
-
-        items = ((tree.set(child, field), child) for child in tree.get_children(''))
-        sort = sorted(items, reverse=descending)
-        for indx, item in enumerate(sort):
-            tree.move(item[1], '', indx)
+        fieldindex = self.fields.index(field)
+        ids_rows = zip(tree.get_children(''), self.rows)
+        sort = sorted(ids_rows, key=lambda(_id,row): row[fieldindex], reverse=descending)
+        for indx, (_id,row) in enumerate(sort):
+            tree.move(_id, '', indx)
+        self.rows = [row for _id,row in sort]
 
         tree.heading(field,
                     command=lambda field=field: self.sortby(field, int(not descending)))
