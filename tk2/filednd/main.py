@@ -14,7 +14,10 @@ import Tkinter
 def _load_tkdnd(master):
     # identify correct binaries
     if sys.platform == "win32":
-        tkdndlib = os.path.join(os.path.split(__file__)[0], "Windows")
+        if sys.maxsize == 2147483647:
+            tkdndlib = os.path.join(os.path.split(__file__)[0], "Windows", "32")
+        else:
+            tkdndlib = os.path.join(os.path.split(__file__)[0], "Windows", "64")
     elif sys.platform == "darwin":
         tkdndlib = os.path.join(os.path.split(__file__)[0], "OSX")
     elif sys.platform in ("linux","linux2"):
