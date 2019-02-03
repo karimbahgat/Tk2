@@ -434,8 +434,8 @@ class OrderedList(mx.AllMixins, tk.LabelFrame):
         mx.AllMixins.__init__(self, master)
 
         # Make the top header
-        self.header = tk.Label(self, text="Items:")
-        self.header.pack(side="top", fill="x")
+        self.header = tk.Label(self, text=kwargs.get('title', "Items:"))
+        self.header.pack(side="top", anchor=kwargs.get('titleanchor', 'w'))
 
         self.items = []
         self.listarea = ScrollFrame(self)

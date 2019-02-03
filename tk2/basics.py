@@ -15,6 +15,7 @@ import ttk
 from . import mixins as mx
 from . import scrollwidgets
 from . import variables as vr
+from . import colorchooser
 
 
 # Classes
@@ -56,7 +57,7 @@ class Entry(Label):
             kwargs["textvariable"] = vr.StringVar()
         self.var = kwargs["textvariable"]
 
-        entry = ttk.Entry(self, **kwargs)
+        entry = self.entry = ttk.Entry(self, **kwargs)
         entry.pack(side=kwargs.pop("entryside","right"))
 
         # placeholder
@@ -102,6 +103,9 @@ class Entry(Label):
 
     def delete(self, *args, **kwargs):
         self.interior.delete(*args, **kwargs)
+
+    def focus(self):
+        self.entry.focus()
 
 class Checkbutton(mx.AllMixins, tk.Checkbutton):
     def __init__(self, master, **kwargs):
@@ -323,7 +327,13 @@ class ColorButton(Button):
         self._img = None
 
         # maybe set random starting color?
-        # ...
+        choosefunc = kwargs.get("command")
+        def wrapfunc():
+            rgb,hexdec = colorchooser.askcolor()
+            self.set_color(rgb)
+            if choosefunc:
+                choosefunc()
+        self['command'] = wrapfunc
 
     def set_color(self, rgb, width=None, height=None):
         #fill button image with the given color in a tkphotoimage
@@ -332,7 +342,7 @@ class ColorButton(Button):
             else: width = self.winfo_reqwidth()
         if not height:
             if self._img: height = self._img.height()
-            else: width = self.winfo_reqheight()
+            else: height = self.winfo_reqheight()
         img = tk.PhotoImage(width=width, height=height)
         imgstring = " ".join(["{"+" ".join(["#%02x%02x%02x" %tuple(rgb) for _ in range(width)])+"}" for _ in range(height)])
         img.put(imgstring)
