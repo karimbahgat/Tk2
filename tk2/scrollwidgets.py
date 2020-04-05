@@ -365,12 +365,15 @@ class Treeview(mx.AllMixins, tk.LabelFrame):
     def insert(self, *args, **kwargs):
         return self.tree.insert(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        return self.tree.delete(*args, **kwargs)
+
 
 class Table(Treeview):
     def __init__(self, master, **kwargs):
         Treeview.__init__(self, master)
         # restrict icon column
-        self.column("#0", stretch=False, width=12)
+        self.column("#0", stretch=False, width=50)
 
 ##    def values(self, field):
 ##        # TODO: should have better validation, eg by specifying type for each column instead of guessing
@@ -398,7 +401,9 @@ class Table(Treeview):
 
     def populate(self, fields, rows):
         # define column indexes/names
-        self.tree["columns"] = fields 
+        self.tree["columns"] = fields
+
+        self.delete(*self.tree.get_children())
 
         # column options...
         self.fields = list(fields)
@@ -408,8 +413,8 @@ class Table(Treeview):
 
         # rows
         self.rows = list(rows)
-        for row in self.rows:
-            self.insert('', 'end', values=row)
+        for i,row in enumerate(self.rows):
+            self.insert('', 'end', text=i+1, values=row)
 
     def sortby(self, field, descending):
         tree = self.tree
@@ -442,7 +447,7 @@ class OrderedList(mx.AllMixins, tk.LabelFrame):
         self.listarea.pack(fill="both", expand=1)
 
     def add_item(self, item, decorate=None):
-        widget = OrderedListItem(self.listarea, item)
+        widget = OrderedListItem(self.listarea.interior, item)
         widget.pack()
         if not decorate:
             def decorate(w):
@@ -451,10 +456,10 @@ class OrderedList(mx.AllMixins, tk.LabelFrame):
         self.items.append(widget)
         return widget
 
-class OrderedListItem(mx.AllMixins, tk.Label):
+class OrderedListItem(mx.AllMixins, tk.Frame):
     def __init__(self, master, item, **kwargs):
         master = mx.get_master(master)
-        tk.Label.__init__(self, master) # doesnt yet allow frame label...
+        tk.Frame.__init__(self, master) # doesnt yet allow frame label...
         mx.AllMixins.__init__(self, master)
 
         self.item = item
